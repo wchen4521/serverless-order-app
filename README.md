@@ -27,3 +27,4 @@ sam deploy --guided
 
 ### CI/CD
 Push to `main` branch triggers auto deployment via GitHub Actions
+# Deployment test
