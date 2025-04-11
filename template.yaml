@@ -1,0 +1,78 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Serverless Order Management System
+
+Globals:
+  Function:
+    Timeout: 10
+    Runtime: python3.9
+    MemorySize: 128
+
+Resources:
+  PlaceOrderFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: place_order.lambda_handler
+      CodeUri: app/
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /order
+            Method: post
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref OrdersTable
+          TOPIC_ARN: !Ref OrderSNSTopic
+      Policies:
+        - AmazonDynamoDBFullAccess
+        - AmazonSNSFullAccess
+
+  UpdateDeliveryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: update_delivery.lambda_handler
+      CodeUri: app/
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /order/update
+            Method: put
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref OrdersTable
+      Policies:
+        - AmazonDynamoDBFullAccess
+
+  NotifyCustomerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: notify_customer.lambda_handler
+      CodeUri: app/
+      Events:
+        SNS:
+          Type: SNS
+          Properties:
+            Topic: !Ref OrderSNSTopic
+      Policies:
+        - AmazonSNSFullAccess
+
+  OrdersTable:
+    Type: AWS::Serverless::SimpleTable
+    Properties:
+      PrimaryKey:
+        Name: order_id
+        Type: String
+
+  OrderSNSTopic:
+    Type: AWS::SNS::Topic
+
+Outputs:
+  PlaceOrderApi:
+    Description: "POST endpoint to place an order"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/order"
+
+  UpdateOrderApi:
+    Description: "PUT endpoint to update an order"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/order/update"
