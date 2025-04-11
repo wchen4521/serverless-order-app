@@ -1,4 +1,4 @@
-name: Deploy Serverless App
+name: Deploy Serverless Order App
 
 on:
   push:
@@ -7,8 +7,10 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v2
@@ -17,11 +19,16 @@ jobs:
         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         aws-region: us-east-1
 
-    - name: Install AWS SAM
-      run: |
-        pip install aws-sam-cli
+    - name: Set up Python 3.9
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+    - name: Install AWS SAM CLI
+      run: pip install aws-sam-cli
 
     - name: Deploy using SAM
       run: |
-        sam build
+        sam build --use-container
         sam deploy --no-confirm-changeset --stack-name serverless-order-app --capabilities CAPABILITY_IAM
+
